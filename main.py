@@ -17,26 +17,33 @@ class Person():
   def __lt__(self, other):
     return self.lastName < other.lastName
   
+class IDsystem():
+  def __init__(self,num):
+    self.Id = num
+
+  def nextID(self):
+    self.Id += 1
+    return self.Id
 
 class schoolPerson(Person):
-  schoolPerson.id = 0
-  def __init__(self, firstName, lastName):
+  def __init__(self, firstName, lastName,id):
     super().__init__(firstName, lastName)
-    self.ID = schoolPerson.id
-    schoolPerson.id = schoolPerson.id + 1
-    
+    self.ID = id.nextID()
   def __repr__(self):
     return(self.firstName + ' ' + self.lastName + ' ' + str(self.ID))
 
   def getID (self):
     return(self.ID)
+  def nextID(self):
+    schoolPerson.id += 1
   
   def __lt__(self, other):
     return self.ID < other.ID
 
-p1 = schoolPerson("Brant", "Yang")
-p2 = schoolPerson("Tait", "Duan")
-p3 = schoolPerson("David", "Dong")
+id = IDsystem(0)
+p1 = schoolPerson("Brant", "Yang",id)
+p2 = schoolPerson("Tait", "Duan",id)
+p3 = schoolPerson("David", "Dong",id)
 
 people = [p1,p2,p3]
 print(sorted(people))
