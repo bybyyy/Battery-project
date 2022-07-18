@@ -10,6 +10,7 @@ class Person():
 
   def getLast(self):
     return(self.lastName)
+  # my code is ok but not ok, such that it is not ok but ok, when ok or not ok it is ok.
 
   def getbday(self):
     return(self.bday)
