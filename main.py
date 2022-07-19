@@ -2,8 +2,8 @@ class Person():
   def __init__(self, firstName, lastName):
     self.firstName = firstName
     self.lastName = lastName
-  bday = 24
-  # bday = input("Your birthday is: ")
+
+  bday = input("Your birthday is: ")
 
   def __repr__(self):
     return(self.firstName + ' ' + self.lastName)
@@ -29,16 +29,18 @@ class schoolPerson(Person):
   def __init__(self, firstName, lastName,id):
     super().__init__(firstName, lastName)
     self.ID = id.nextID()
+
   def __repr__(self):
     return(self.firstName + ' ' + self.lastName + ' ' + str(self.ID))
 
   def getID (self):
     return(self.ID)
+
   def nextID(self):
     schoolPerson.id += 1
   
   def __lt__(self, other):
-    return self.ID < other.ID
+    return self.lastName < other.lastName
 
 id = IDsystem(0)
 p1 = schoolPerson("Brant", "Yang",id)
