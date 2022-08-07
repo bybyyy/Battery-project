@@ -1,7 +1,4 @@
 import math
-from math import pow
-from math import exp
-from math import pi
 
 #beta = pi*sqrt(diffusionCoefficient)/length #0.574
 beta = 0.574
