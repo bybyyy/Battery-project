@@ -1,51 +1,35 @@
-class Person():
-  def __init__(self, firstName, lastName):
-    self.firstName = firstName
-    self.lastName = lastName
+import math
+from math import pow
+from math import exp
+from math import pi
 
-  bday = input("Your birthday is: ")
+#beta = pi*sqrt(diffusionCoefficient)/length #0.574
+beta = 0.574
 
-  def __repr__(self):
-    return(self.firstName + ' ' + self.lastName)
+def F (x, y, z, b):
+	sum = 0
+	for m in range(1,1000):
+		n1 = math.exp((b**2)*(m**2)*(x-z)) - math.exp(-(b**2)*(m**2)*(x-y))
+		d1 = (b**2)*(m**2)
+		sigma = n1/d1
+		sum = sum + sigma
 
-  def getLast(self):
-    return(self.lastName)
+	return (z - y + 2 * sum)
 
-  def getbday(self):
-    return(self.bday)
+def alpha():
+	sum = 0
+	for k in range(0, failTaskNO):
+		sigma = current[k] * F(failTime, startTime[k], startTime[k] + duration[k], beta)
+		sum = sum + sigma
 
-  def __lt__(self, other):
-    return self.lastName < other.lastName
-  
-class IDsystem():
-  def __init__(self,num):
-    self.Id = num
+	return sum + currentU * F(failTime, failTaskStartTime, failTime, beta)
 
-  def nextID(self):
-    self.Id += 1
-    return self.Id
+current = [912, 912]
+startTime = [0, 35]
+duration = [25, 25]
+failTime = 43.8
+failTaskNO = 2
+failTaskStartTime = 35
+currentU = 912
 
-class schoolPerson(Person):
-  def __init__(self, firstName, lastName,id):
-    super().__init__(firstName, lastName)
-    self.ID = id.nextID()
-
-  def __repr__(self):
-    return(self.firstName + ' ' + self.lastName + ' ' + str(self.ID))
-
-  def getID (self):
-    return(self.ID)
-
-  def nextID(self):
-    schoolPerson.id += 1
-  
-  def __lt__(self, other):
-    return self.lastName < other.lastName
-
-id = IDsystem(0)
-p1 = schoolPerson("Brant", "Yang",id)
-p2 = schoolPerson("Tait", "Duan",id)
-p3 = schoolPerson("David", "Dong",id)
-
-people = [p1,p2,p3]
-print(sorted(people))
+print(alpha())
