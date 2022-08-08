@@ -18,10 +18,9 @@ def F (x, y, z, b):
 
 def alpha():
 	sum = 0
-	for k in range(1, failTaskNO):
+	for k in range(0, failTaskNO):
 		sigma = current[k] * F(failTime, startTime[k], startTime[k] + duration[k], beta)
 		sum = sum + sigma
-
 
 	return round(sum, 3) + currentU * F(failTime, failTaskStartTime, failTime, beta)
 
