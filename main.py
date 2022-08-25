@@ -10,12 +10,12 @@ tasks = []
 
 
 class task:
-    def __init__(self, ID, startTime, amperage, duration, deadline):
+    def __init__(self, ID, startTime, amperage, duration):
         self.ID = ID
         self.startTime = startTime
         self.amperage = amperage
         self.duration = duration
-        self.deadline = deadline
+        # self.deadline = deadline
 
     def __repr__(self):
         return str(self.ID) + ' ' + str(self.startTime) + ' ' + str(self.amperage) + ' ' + str(self.duration)
