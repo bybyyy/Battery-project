@@ -1,20 +1,21 @@
 import math
 import random
 
-alpha = 200000
+alpha = 39668
 # beta = pi*sqrt(diffusionCoefficient)/length #0.574
 beta = 0.574
 unused = 0
-NumberofTasks = 100
+NumberofTasks = 2
 tasks = []
 
 
 class task:
-    def __init__(self, ID, startTime, amperage, duration):
+    def __init__(self, ID, startTime, amperage, duration, deadline):
         self.ID = ID
         self.startTime = startTime
         self.amperage = amperage
         self.duration = duration
+        self.deadline = deadline
 
     def __repr__(self):
         return str(self.ID) + ' ' + str(self.startTime) + ' ' + str(self.amperage) + ' ' + str(self.duration)
@@ -79,12 +80,11 @@ def F(x, y, z, b):
 
 def Capacity(arr, endtime, failtaskindex):
     sum = 0
-    for k in range(0, failtaskindex + 1):
+    for k in range(0, failtaskindex):
         sigma = arr[k].amperage * F(endtime, arr[k].startTime, arr[k].startTime + arr[k].duration, beta)
         sum = sum + sigma
 
-    # return round(sum, 3) + currentU * F(failTime, failTaskStartTime, failTime, beta)
-    return round(sum, 3)
+    return round(sum + arr[failtaskindex].amperage * F(endtime, arr[failtaskindex].startTime, endtime, beta), 3)
 
 
 def wasted(x, y, z, b):
@@ -95,7 +95,6 @@ def wasted(x, y, z, b):
         d1 = (b ** 2) * (m ** 2)
         sigma = round((n1 - n2) / d1, 3)
         unused = unused + sigma
-
     # m.x = var(i, within=binary)
     # @m.Objective(sense=maximize)
     # sum(x[i] * b[i] for i in I)
@@ -105,11 +104,11 @@ def wasted(x, y, z, b):
 
 def totalUnsed(arr, endtime, failtaskindex):
     sum = 0
-    for k in range(0, failtaskindex + 1):
+    for k in range(0, failtaskindex):
         sigma = arr[k].amperage * wasted(endtime, arr[k].startTime, arr[k].startTime + arr[k].duration, beta)
         sum = sum + sigma
 
-    return round(sum, 3)
+    return round(sum + arr[failtaskindex].amperage * wasted(endtime, arr[failtaskindex].startTime, endtime, beta), 3)
 
 
 def totalCharge(total, wasted):
@@ -122,27 +121,28 @@ def searchfailtaskindex(tasks, a):
         tarrary = []
         for j in range(0, i + 1):
             tarrary.append(tasks[j])
-        if Capacity(tarrary, tarrary[len(tarrary) - 1].startTime + tarrary[len(tarrary) - 1].duration, i) < a:
+        total = Capacity(tarrary, tarrary[len(tarrary) - 1].startTime + tarrary[len(tarrary) - 1].duration, i)
+        if total < a:
             index += 1
         else:
-            return index + 1
+            return index
     return -1
 
 
-def binarySearch(arr, i, r, x):
-    if r >= i:
-        m = i + (r - i) // 2
+def binarySearch(arr, left, right, x):
+    if right >= left:
+        middle = left + (right - left) // 2
+        # print("middle: ", middle)
 
-        tendtime = arr[m].startTime + arr[m].duration
-        tarr = splitarray(arr, 0, m)
-        narr = splitarray(arr, 0, m + 1)
-
-        if Capacity(tarr, tendtime, m) < x and Capacity(narr, tendtime, m + 1) > x:
-            return m
-        elif Capacity(tarr, tendtime, m) > x:
-            return binarySearch(arr, i, m - 1, x)
+        totalt = Capacity(arr, middle, failtaskindex)
+        # print("total: ", totalt)
+        # print("dif: \n", totalt - x)
+        if abs(totalt - x) <= 15:
+            return round(middle, 3)
+        elif totalt > x:
+            return binarySearch(arr, left, middle - 0.1, x)
         else:
-            return binarySearch(arr, m + 1, r, x)
+            return binarySearch(arr, middle + 0.1, right, x)
 
     else:
         return -1
@@ -169,9 +169,10 @@ for x in range(1, NumberofTasks + 1):  # recalculate the start time for all task
         startTime = tasks[x - 2].startTime + tasks[x - 2].duration
     tasks[x - 1].startTime = startTime
 
-# tasks = []
-# tasks.append(task(1, 0, 912, 25))
-# tasks.append(task(2, 35, 912, 9.2))
+tasks = []
+tasks.append(task(1, 0, 912, 25))
+tasks.append(task(2, 25, 0, 10))
+tasks.append(task(3, 35, 912, 25))
 
 for obj in tasks:
     print(obj.ID, obj.startTime, obj.amperage, obj.duration)
@@ -185,23 +186,30 @@ consumption = totalCharge(capacity, orgunused)
 print("\nbefore sorted")
 printall(capacity, orgunused, consumption)
 
-tasks = sorted(tasks)  # arrange them in descending order of their amperage
-for x in range(1, NumberofTasks + 1):  # recalculate the start time for all tasks in the new arrangement
-    if x == 1:
-        startTime = 0
-    else:
-        startTime = tasks[x - 2].startTime + tasks[x - 2].duration
-    tasks[x - 1].startTime = startTime
+# tasks = sorted(tasks)  # arrange them in descending order of their amperage
+# for x in range(1, NumberofTasks + 1):  # recalculate the start time for all tasks in the new arrangement
+#     if x == 1:
+#         startTime = 0
+#     else:
+#         startTime = tasks[x - 2].startTime + tasks[x - 2].duration
+#     tasks[x - 1].startTime = startTime
+#
+# sortCapacity = Capacity(tasks, endTime, failTaskIn)
+# sortUnused = totalUnsed(tasks, endTime, failTaskIn)
+# sortConsumption = totalCharge(sortCapacity, sortUnused)
+#
+# print("after sorted")
+# printall(sortCapacity, sortUnused, sortConsumption)
 
-sortCapacity = Capacity(tasks, endTime, failTaskIn)
-sortUnused = totalUnsed(tasks, endTime, failTaskIn)
-sortConsumption = totalCharge(sortCapacity, sortUnused)
+# print("alpha - energy consumption = ", round(alpha - sortCapacity, 3))
 
-print("after sorted")
-printall(sortCapacity, sortUnused, sortConsumption)
+failtaskindex = searchfailtaskindex(tasks, alpha)
+print(failtaskindex+1)
+actualendtime = binarySearch(tasks, tasks[failtaskindex].startTime, tasks[failtaskindex].startTime + tasks[failtaskindex].duration, alpha)
+print(actualendtime)
 
-print("alpha - energy consumption = ", round(alpha - sortCapacity, 3))
-
-print(searchfailtaskindex(tasks, alpha) + 1)
-
-# print(binarySearch(tasks, 0, len(tasks) - 1, alpha))
+capacity = Capacity(tasks, actualendtime, failTaskIn)
+orgunused = totalUnsed(tasks, actualendtime, failTaskIn)
+consumption = totalCharge(capacity, orgunused)
+print("\nfinal")
+printall(capacity, orgunused, consumption)
