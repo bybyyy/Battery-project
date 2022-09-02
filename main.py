@@ -2,7 +2,7 @@ import math
 import random
 
 alpha = 39668
-# beta = pi*sqrt(diffusionCoefficient)/length #0.574
+# beta = pi*sqrt(diffusionCoefficient)/length
 beta = 0.574
 unused = 0
 NumberofTasks = 2
@@ -10,12 +10,12 @@ tasks = []
 
 
 class task:
-    def __init__(self, ID, startTime, amperage, duration):
+    def __init__(self, ID, startTime, amperage, duration, deadline):
         self.ID = ID
         self.startTime = startTime
         self.amperage = amperage
         self.duration = duration
-        # self.deadline = deadline
+        self.deadline = deadline
 
     def __repr__(self):
         return str(self.ID) + ' ' + str(self.startTime) + ' ' + str(self.amperage) + ' ' + str(self.duration)
@@ -159,7 +159,8 @@ def splitarray(arr, i, f):
 for x in range(1, NumberofTasks + 1):  # random generate certain amount of tasks
     amperage = random.randint(10, 900)
     duration = random.randint(1, 10)  # minutes
-    tasks.append(task(x, 0, amperage, duration))
+    deadline = random.randint(duration, 100)
+    tasks.append(task(x, 0, amperage, duration, deadline))
 
 # tasks = sorted(tasks)  # arrange them in descending order of their amperage
 for x in range(1, NumberofTasks + 1):  # recalculate the start time for all tasks in the new arrangement
@@ -170,9 +171,9 @@ for x in range(1, NumberofTasks + 1):  # recalculate the start time for all task
     tasks[x - 1].startTime = startTime
 
 tasks = []
-tasks.append(task(1, 0, 912, 25))
-tasks.append(task(2, 25, 0, 10))
-tasks.append(task(3, 35, 912, 25))
+tasks.append(task(1, 0, 912, 25, 20))
+tasks.append(task(2, 25, 0, 10, -1))
+tasks.append(task(3, 35, 912, 25, 40))
 
 for obj in tasks:
     print(obj.ID, obj.startTime, obj.amperage, obj.duration)
@@ -200,13 +201,23 @@ printall(capacity, orgunused, consumption)
 #
 # print("after sorted")
 # printall(sortCapacity, sortUnused, sortConsumption)
-
+#
 # print("alpha - energy consumption = ", round(alpha - sortCapacity, 3))
 
 failtaskindex = searchfailtaskindex(tasks, alpha)
 print(failtaskindex+1)
 actualendtime = binarySearch(tasks, tasks[failtaskindex].startTime, tasks[failtaskindex].startTime + tasks[failtaskindex].duration, alpha)
 print(actualendtime)
+
+voltagescaling = 2
+for obj in tasks:
+    if obj.deadline != -1 and (obj.startTime + obj.duration) > obj.deadline:
+        obj.amperage = obj.amperage * voltagescaling
+        obj.duration = obj.duration / voltagescaling
+
+for obj in tasks:
+    print(obj.ID, obj.startTime, obj.amperage, obj.duration)
+
 
 capacity = Capacity(tasks, actualendtime, failTaskIn)
 orgunused = totalUnsed(tasks, actualendtime, failTaskIn)
