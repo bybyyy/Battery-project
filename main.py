@@ -1,5 +1,6 @@
 import math
 import random
+import copy
 
 alpha = 39668
 # beta = pi*sqrt(diffusionCoefficient)/length
@@ -174,20 +175,85 @@ def findobjectbyID(list, value):
     return -1
 
 
-# random generate certain amount of tasks
-for x in range(1, NumberofTasks + 1):
-    if x == 1:
-        arrivetime = 0
-    else:
-        arrivetime = random.randint(tasks[x - 2].arrivetime + 1, tasks[x - 2].arrivetime + 6)
-    startTime = arrivetime
-    amperage = random.randint(10, 900)
-    duration = random.randint(1, 40)  # minutes
-    deadline = random.randint(arrivetime + 1, 40)
-    tasks.append(task(x, arrivetime, startTime, amperage, duration, deadline, 0))
+def firstoptimizationfordeadline():
+    finaltasks.append(tasks[0])
+    tasks[1].startTime = max(tasks[1].arrivetime, tasks[0].startTime + tasks[0].duration)
+    finaltasks.append(tasks[1])
+    # printalltasks(tasks)
+    for x in range(2, len(tasks)):
+        tasks[x].startTime = max(tasks[x].arrivetime, tasks[x - 1].startTime + tasks[x - 1].duration)
+        if tasks[x].startTime + tasks[x].duration > tasks[x].deadline:
+            c = copy.copy(tasks[x])  # current task
+            p = copy.copy(finaltasks[-1])  # previous task
+            originalsum = (c.startTime + c.duration - c.deadline) + (p.startTime + p.duration - p.deadline)
+            # hypothetical switch
+            c.startTime = max(c.arrivetime, p.startTime)
+            p.startTime = c.startTime + c.duration
+            switchedsum = (c.startTime + c.duration - c.deadline) + (p.startTime + p.duration - p.deadline)
+            # print("o", originalsum)
+            # print("s", switchedsum)
+            if switchedsum <= originalsum:  # do switch, but then check if it meets the deadline
+                finaltasks.pop(-1)
+                # check current and add it
+                if c.startTime + c.duration - c.deadline <= 0:
+                    finaltasks.append(c)
+                else:
+                    c.amperage *= voltagescaling
+                    c.duration /= voltagescaling
+                    if c.startTime + c.duration - c.deadline <= 0:
+                        finaltasks.append(c)
+                        p.startTime = max(p.arrivetime, c.startTime + c.duration)
+
+                # check previous and add it
+                if p.startTime + p.duration - p.deadline <= 0:
+                    finaltasks.append(p)
+                else:
+                    p.amperage *= voltagescaling
+                    p.duration /= voltagescaling
+                    # if it works, add the previous
+                    if p.startTime + p.duration - p.deadline <= 0:
+                        finaltasks.append(p)
+        else:
+            finaltasks.append(tasks[x])
+
+
+def secondoptimizationforamperage(finaltasks):
+    for x in reversed(range(2, len(finaltasks))):
+        if finaltasks[x].amperage > finaltasks[x - 1].amperage:
+            min = finaltasks[x].deadline - finaltasks[x].duration - finaltasks[x].startTime
+            for y in range(x + 2, len(finaltasks)):
+                currentdiff = finaltasks[y].deadline - finaltasks[y].duration - finaltasks[y].startTime
+                if currentdiff < min:
+                    min = currentdiff
+            if min > 0:
+                total = finaltasks[x].amperage * finaltasks[x].duration
+                finaltasks[x].duration += min
+                finaltasks[x].amperage = total / finaltasks[x].duration
+
+
+def randomtaskgeneration(NumberofTasks):
+    # random generate certain amount of tasks
+    for x in range(1, NumberofTasks + 1):
+        if x == 1:
+            arrivetime = 0
+        else:
+            arrivetime = random.randint(tasks[x - 2].arrivetime + 1, tasks[x - 2].arrivetime + 6)
+        startTime = arrivetime
+        amperage = random.randint(10, 900)
+        duration = random.randint(1, 40)  # minutes
+        deadline = random.randint(arrivetime + 1, 40)
+        tasks.append(task(x, arrivetime, startTime, amperage, duration, deadline, 0))
+
+
+def calculateenergyconsumption(list, failtime, failtask):
+    sortCapacity = Capacity(list, failtime, failtask)
+    sortUnused = totalUnsed(list, failtime, failtask)
+    sortConsumption = totalCharge(sortCapacity, sortUnused)
+    printall(sortCapacity, sortUnused, sortConsumption)
+
+randomtaskgeneration(NumberofTasks)
 
 # printalltasks(tasks)
-
 
 # tasks = sorted(tasks)  # arrange them in descending order of their amperage
 # for x in range(1, NumberofTasks + 1):  # recalculate the start time for all tasks in the new arrangement
@@ -200,50 +266,52 @@ for x in range(1, NumberofTasks + 1):
 tasks = [task(1, 0, 0, 300, 10, 20, 0),
          task(2, 6, 6, 200, 8, 19, 0),
          task(3, 7, 7, 400, 8, 15, 0),
-         task(4, 9, 9, 500, 2, 14, 0)]
+         task(4, 9, 9, 500, 2, 20, 0)]
 
 printalltasks(tasks)
 voltagescaling = 2
-for x in range(0, len(tasks)):
-    if tasks[x].deadline == -1:  # if no deadline, then just add it
-        finaltasks.append(tasks[x])
-    else:
-        if x != 0 and tasks[x - 1].startTime + tasks[x - 1].duration > tasks[x].arrivetime:
-            tasks[x].startTime = tasks[x - 1].startTime + tasks[x - 1].duration
-        if tasks[x].startTime + tasks[x].duration < tasks[x].deadline:
-            finaltasks.append(tasks[x])
-        else:
-            tasks[x].amperage = tasks[x].amperage * voltagescaling
-            tasks[x].duration = tasks[x].duration / voltagescaling
-            if tasks[x].startTime + tasks[x].duration - tasks[x].deadline <= 0:
-                finaltasks.append(tasks[x])
-            else:
-                index = x
-                while index >= 2:
-                    #  switch with the one before it and see if it works
-                    print("here")
-                    print(repr(tasks[index]))
-                    print(repr(tasks[index - 1]))
-                    subject = tasks[index]
-                    friend = tasks[index-1]
-                    subject.startTime = max(subject.arrivetime, friend.startTime)
-                    friend.startTime = subject.startTime + subject.duration
-                    print("updated")
-                    print(repr(subject))
-                    print(repr(friend))
-                    #  if it works, then update to the new order
-                    if subject.startTime + subject.duration <= subject.deadline and \
-                            friend.startTime + friend.duration <= friend.deadline:
-                        print("nice")
-                        obj = findobjectbyID(tasks, friend.ID)
-                        print(obj)
-                        finaltasks.remove(obj)
-                        finaltasks.append(subject)
-                        finaltasks.append(friend)
-                        index = -1
-                        print("now")
-                        printalltasks(finaltasks)
-                    index -= 1
+
+firstoptimizationfordeadline()
+# for x in range(0, len(tasks)):
+#     if tasks[x].deadline == -1:  # if no deadline, then just add it
+#         finaltasks.append(tasks[x])
+#     else:
+#         if x != 0 and tasks[x - 1].startTime + tasks[x - 1].duration > tasks[x].arrivetime:
+#             tasks[x].startTime = tasks[x - 1].startTime + tasks[x - 1].duration
+#         if tasks[x].startTime + tasks[x].duration < tasks[x].deadline:
+#             finaltasks.append(tasks[x])
+#         else:
+#             tasks[x].amperage = tasks[x].amperage * voltagescaling
+#             tasks[x].duration = tasks[x].duration / voltagescaling
+#             if tasks[x].startTime + tasks[x].duration - tasks[x].deadline <= 0:
+#                 finaltasks.append(tasks[x])
+#             else:
+#                 index = x
+#                 while index >= 2:
+#                     #  switch with the one before it and see if it works
+#                     print("here")
+#                     print(repr(tasks[index]))
+#                     print(repr(tasks[index - 1]))
+#                     subject = tasks[index]
+#                     friend = tasks[index-1]
+#                     subject.startTime = max(subject.arrivetime, friend.startTime)
+#                     friend.startTime = subject.startTime + subject.duration
+#                     print("updated")
+#                     print(repr(subject))
+#                     print(repr(friend))
+#                     #  if it works, then update to the new order
+#                     if subject.startTime + subject.duration <= subject.deadline and \
+#                             friend.startTime + friend.duration <= friend.deadline:
+#                         print("nice")
+#                         obj = findobjectbyID(tasks, friend.ID)
+#                         print(obj)
+#                         finaltasks.remove(obj)
+#                         finaltasks.append(subject)
+#                         finaltasks.append(friend)
+#                         index = -1
+#                         print("now")
+#                         printalltasks(finaltasks)
+#                     index -= 1
 
             #     print("here")
             #     stop = 0
@@ -264,7 +332,11 @@ for x in range(0, len(tasks)):
             #             finaltasks.insert(b - 1, tasks[a])
             #             stop = 1
             #         a -= 1
-print("end")
+print("first round")
+printalltasks(finaltasks)
+
+secondoptimizationforamperage(finaltasks)
+print("second round")
 printalltasks(finaltasks)
 
 failtaskindex = searchfailtaskindex(tasks, alpha)
@@ -272,15 +344,12 @@ print(failtaskindex + 1)
 actualendtime = binarySearch(tasks, tasks[failtaskindex].startTime,
                              tasks[failtaskindex].startTime + tasks[failtaskindex].duration, alpha)
 print(actualendtime)
+#
+endTime = finaltasks[len(finaltasks) - 1].startTime + finaltasks[len(finaltasks) - 1].duration
+failTaskIn = len(finaltasks) - 1
 
-endTime = tasks[len(tasks) - 1].startTime + tasks[len(tasks) - 1].duration
-failTaskIn = len(tasks) - 1
-
-capacity = Capacity(tasks, endTime, failTaskIn)
-orgunused = totalUnsed(tasks, endTime, failTaskIn)
-consumption = totalCharge(capacity, orgunused)
 print("\nbefore sorted")
-printall(capacity, orgunused, consumption)
+calculateenergyconsumption(finaltasks,endTime,failTaskIn)
 
 # arrange tasks in descending order of their amperage
 tasks = sorted(tasks)
@@ -291,20 +360,11 @@ for x in range(1, len(tasks) + 1):  # recalculate the start time for all tasks i
         startTime = tasks[x - 2].startTime + tasks[x - 2].duration
     tasks[x - 1].startTime = startTime
 
-sortCapacity = Capacity(tasks, endTime, failTaskIn)
-sortUnused = totalUnsed(tasks, endTime, failTaskIn)
-sortConsumption = totalCharge(sortCapacity, sortUnused)
-
 print("after sorted")
-printall(sortCapacity, sortUnused, sortConsumption)
+calculateenergyconsumption(finaltasks, actualendtime, failtaskindex)
 
-print("alpha - energy consumption = ", round(alpha - sortCapacity, 3))
+# print("alpha - energy consumption = ", round(alpha - sortCapacity, 3))
 
 for obj in tasks:
     print(obj.ID, obj.startTime, obj.amperage, obj.duration)
 
-capacity = Capacity(tasks, actualendtime, failTaskIn)
-orgunused = totalUnsed(tasks, actualendtime, failTaskIn)
-consumption = totalCharge(capacity, orgunused)
-print("\nfinal")
-printall(capacity, orgunused, consumption)
